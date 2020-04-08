@@ -1,6 +1,4 @@
 import socket
-from threading import *
-import time
 
 
 class User:
@@ -8,39 +6,22 @@ class User:
     login = ""
     password = ""
     ip_address = ""
-    port = 0
-    clients_port = 0
-    user_socket = socket.socket()
-    thread = Thread()
-    adresat = ""
+    port_for_main_server_connection = 0
+    users_server_port = 0
+    users_socket_for_server_connection = socket.socket()
 
-    def talk(self, socket):
-        print(self.thread.name)
-        initial_data = socket.recv(1024)
-        x = initial_data.decode('utf-8').split("@")
-        self.name = x[0]
-        self.login = x[1]
-        self.password = x[2]
-        self.clients_port = x[3]
-        try:
-            self.adresat = x[4]
-        except:
-            self.adresat = ""
-        socket.send(initial_data)
-        while True:
-            msg = socket.recv(1024)
-            print(msg.decode('utf-8'))
-            msg = "damian" + str(msg)
-            socket.send(bytes(msg, 'utf-8'))
-            time.sleep(3)
-
-    def __init__(self, socket, ip_address, port):
-        self.user_socket = socket
+    def __init__(self, name=None, login=None, password=None, ip_address=None, port_1=None, port_2=None,
+                 users_socket_for_server_connection=None):
+        self.name = name
+        self.login = login
+        self.password = password
+        self.users_socket_for_server_connection=users_socket_for_server_connection
         self.ip_address = ip_address
-        self.port = port
-        self.thread = Thread(target=self.talk, args=(self.user_socket,))
-        self.thread.name = ip_address + ":" + str(port)
-        self.thread.start()
+        self.port_for_main_server_connection = port_1
+        self.clients_server_port = port_2
+
 
     def toString(self):
-        return f'name {self.name}, login {self.login}, password {self.password}, ip address {self.ip_address}, port {self.port}, thread {self.thread.getName()}, adresat {self.adresat}'
+        return f'name {self.name} ,\n login {self.login}, \npassword {self.password}, \nip address {self.ip_address}, \nport ' \
+               f'for main server communication {self.port_for_main_server_connection}, \nuser\'s server\'' \
+               f's port {self.users_server_port} '

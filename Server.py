@@ -1,55 +1,67 @@
+import select
+from threading import Thread
 from User import *
 from globals import *
-import time
 
 
 class Server:
     list_of_connected_users = []
-    #list_of_threads = []
-    #list_of_sockets = []
+    list_of_all_users = []
     server_socket = socket.socket()
-    ip_address = ""
-    port_number = 0
+    Main_Server_ip_address = ""
+    Main_Server_port_number = 0
+    list_of_threads = []
 
     def __init__(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.ip_address = MAIN_SERVER_IP
-        self.port_number = SERVER_PORT
-        self.server_socket.bind((self.ip_address, self.port_number))
+        self.Main_Server_ip_address = MAIN_SERVER_IP
+        self.Main_Server_port_number = SERVER_PORT
+        self.server_socket.bind((self.Main_Server_ip_address, self.Main_Server_port_number))
         self.server_socket.listen(NUMBER_OF_USERS)
 
+    def talk_with_client(self, client_socket):
+        # #### I use the synchronous calls, Client always begins the conversation, because server accomplishes
+        # requests and informs ###########
+        while True:
+            frame = receive_frame(client_socket)
+            data = prepare_data(frame)
+            print(data)
+            Main_Server_serve_client(data, client_socket, self.list_of_all_users, self.list_of_connected_users)
+
     def start_listening_to_connections(self):
+        ################ updating list of connected users every 5 seconds #######
+        # checking_connections = Thread(name="checking_connections", target=Main_Server_check_connections,
+        #                               args=(self.list_of_all_users, self.list_of_connected_users,))
+        ################ updating list of connected users every 5 seconds #######
         ################ Listening for connections #################
         while True:
             client_socket, client_address = self.server_socket.accept()
-            user = User(client_socket, client_address[0], client_address[1])
+            user = User(users_socket_for_server_connection=client_socket, ip_address=client_address[0],
+                        port_1=client_address[1])
             self.list_of_connected_users.append(user)
-            #self.list_of_sockets.append(client_socket)
-        ################ Listening for connections #################
-
+            ################ Listening for connections #################
+            ## When connection is established, server can talk to user with client_socket in separate thread ##
+            talking_with_client_thread = Thread(name=str(client_address[0]) + ":" + str(client_address[1]),
+                                                target=self.talk_with_client, args=(client_socket,))
+            self.list_of_threads.append(talking_with_client_thread)
+            talking_with_client_thread.start()
 
 def show(servers):
     while True:
-        array_of_names=[]
-        for i in servers.list_of_connected_users:
-            if i.name != "":
-                array_of_names.append(i.name)
-        for i in servers.list_of_connected_users:
-            if i.adresat in array_of_names:
-                i.user_socket.send(bytes("Connect to "+i.adresat,'utf-8'))
         print("Working threads:")
-
+        for i in servers.list_of_threads:
+            print(i.name+"\n")
         for i in servers.list_of_connected_users:
             print(i.toString())
         time.sleep(5)
 
 
 server = Server()
-
 ################ checking threads #############
 showing_thread = Thread(target=show, args=(server,))
 showing_thread.start()
 ################ checking threads #############
-
 server.start_listening_to_connections()
+
+
