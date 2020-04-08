@@ -2,20 +2,28 @@ from User import *
 from globals import *
 import os
 
+
 class Client:
-    #list_of_sockets = []
+    name = ""
+    login = ""
+    password = ""
+    # list_of_sockets = []
     list_of_connected_users = []
+    not_yet_connected = ["Ola"]
     receiving_socket = socket.socket()
     list_of_communication_sockets = []
     connect_to_server_socket = socket.socket()
     list_of_threads = []
-    clients_server_port_number = 0
+    clients_server_port_number = 0  # port on which client is listening on
     clients_server = socket.socket()
     ip_address = ""
 
     ########### Creating Client - firstly creating server for Client ########
-    def __init__(self, number_of_port):
+    def __init__(self, name, login, password, number_of_port):
         try:
+            self.name = name
+            self.login = login
+            self.password = password
             self.clients_server_port_number = number_of_port
             self.ip_address = socket.gethostname()
             self.clients_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -31,7 +39,7 @@ class Client:
             user_socket, user_address = self.clients_server.accept()
             user = User(user_socket, user_address[0], user_address[1])
             self.list_of_connected_users.append(user)
-            #self.list_of_sockets.append(user_socket)
+            # self.list_of_sockets.append(user_socket)
         ################ Listening for connections #################
 
     ###### Connectiong to MAIN SERVER ##################
@@ -44,24 +52,51 @@ class Client:
             print("No connection to Main Server established)")
 
     def talk_with_server(self):
-        i = 1
+        if self.name == "Damian":
+            try:
+                tmp = self.not_yet_connected[0]
+            except:
+                tmp = ""
+            msg = self.name + "@" + self.login + "@" + self.password + "@" + str(
+                self.clients_server_port_number) + "@" + tmp
+            self.connect_to_server_socket.send(bytes(msg, 'utf-8'))
+        else:
+            i = 1
+            msg = self.name + "@" + self.login + "@" + self.password + "@" + str(
+                self.clients_server_port_number)
+            self.connect_to_server_socket.send(bytes(msg, 'utf-8'))
         while True:
+            i = 1
             msg = str(i)
             self.connect_to_server_socket.send(bytes(msg, 'utf-8'))
             time.sleep(3)
             msg = self.connect_to_server_socket.recvfrom(1024)[0]
             print(msg.decode('utf-8'))
             i = i + 1
+            time.sleep(3)
+
+    # def talk_with_server(self):
+    #     i = 1
+    #     msg=self.name+self.login+self.password+str(self.clients_server_port_number)
+    #     self.connect_to_server_socket.send(bytes(msg, 'utf-8'))
+    #     while True:
+    #         msg = str(i)
+    #         self.connect_to_server_socket.send(bytes(msg, 'utf-8'))
+    #         time.sleep(3)
+    #         msg = self.connect_to_server_socket.recvfrom(1024)[0]
+    #         print(msg.decode('utf-8'))
+    #         i = i + 1
 
 
 if __name__ == "__main__":
-    good_clients_server_flag=False
+    good_clients_server_flag = False
     ########### Tworzę Clienta - automatycznie tworzy się server klienta ####
     while not good_clients_server_flag:
         try:
             port = input("Wprowadź numer portu na którym będzie słuchał server znajdujący się u klienta")
-            client = Client(int(port))
-            good_clients_server_flag=True
+            tmp = port.split("@")
+            client = Client(tmp[0], tmp[1], tmp[2], int(tmp[3]))
+            good_clients_server_flag = True
         except OSError:
             print("Wprowadź numer portu ponownie")
     ############## tworzę wątek do rozmowy z serwerem głównym ##########
@@ -73,7 +108,7 @@ if __name__ == "__main__":
         print("Error creating thread talking to the main server")
     ############## tworze wątek do obsługi serwera na kliencie #########
     try:
-        clients_server=Thread(target=client.clients_server_listen_for_other_users, args=())
+        clients_server = Thread(target=client.clients_server_listen_for_other_users, args=())
         clients_server.start()
     except:
         print("Error when waiting for new connections")

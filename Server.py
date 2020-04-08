@@ -5,8 +5,8 @@ import time
 
 class Server:
     list_of_connected_users = []
-    list_of_threads = []
-    list_of_sockets = []
+    #list_of_threads = []
+    #list_of_sockets = []
     server_socket = socket.socket()
     ip_address = ""
     port_number = 0
@@ -25,13 +25,21 @@ class Server:
             client_socket, client_address = self.server_socket.accept()
             user = User(client_socket, client_address[0], client_address[1])
             self.list_of_connected_users.append(user)
-            self.list_of_sockets.append(client_socket)
+            #self.list_of_sockets.append(client_socket)
         ################ Listening for connections #################
 
 
 def show(servers):
     while True:
+        array_of_names=[]
+        for i in servers.list_of_connected_users:
+            if i.name != "":
+                array_of_names.append(i.name)
+        for i in servers.list_of_connected_users:
+            if i.adresat in array_of_names:
+                i.user_socket.send(bytes("Connect to "+i.adresat,'utf-8'))
         print("Working threads:")
+
         for i in servers.list_of_connected_users:
             print(i.toString())
         time.sleep(5)
