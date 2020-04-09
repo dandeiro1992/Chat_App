@@ -1,11 +1,10 @@
 import select
+import socket
 from threading import Thread
-from User import *
 from globals import *
 
 
 class Server:
-    list_of_connected_users = []
     list_of_all_users = []
     server_socket = socket.socket()
     Main_Server_ip_address = ""
@@ -23,11 +22,11 @@ class Server:
     def talk_with_client(self, client_socket):
         # #### I use the synchronous calls, Client always begins the conversation, because server accomplishes
         # requests and informs ###########
-        while True:
+        while True:  # receiving a request from Client
             frame = receive_frame(client_socket)
             data = prepare_data(frame)
             print(data)
-            Main_Server_serve_client(data, client_socket, self.list_of_all_users, self.list_of_connected_users)
+            Main_Server_serve_client(data, client_socket, self.list_of_all_users)
 
     def start_listening_to_connections(self):
         ################ updating list of connected users every 5 seconds #######
@@ -37,10 +36,6 @@ class Server:
         ################ Listening for connections #################
         while True:
             client_socket, client_address = self.server_socket.accept()
-            user = User(users_socket_for_server_connection=client_socket, ip_address=client_address[0],
-                        port_1=client_address[1])
-            self.list_of_connected_users.append(user)
-
             ################ Listening for connections #################
             ## When connection is established, server can talk to user with client_socket in separate thread ##
             talking_with_client_thread = Thread(name=str(client_address[0]) + ":" + str(client_address[1]),
@@ -48,12 +43,13 @@ class Server:
             self.list_of_threads.append(talking_with_client_thread)
             talking_with_client_thread.start()
 
+
 def show(servers):
     while True:
         print("Working threads:")
         for i in servers.list_of_threads:
-            print(i.name+"\n")
-        for i in servers.list_of_connected_users:
+            print(i.name + "\n")
+        for i in servers.list_of_all_users:
             print(i.toString())
         time.sleep(0.5)
 
@@ -64,5 +60,3 @@ showing_thread = Thread(target=show, args=(server,))
 showing_thread.start()
 ################ checking threads #############
 server.start_listening_to_connections()
-
-
