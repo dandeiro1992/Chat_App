@@ -39,11 +39,11 @@ class Client:
         ################ Listening for connections #################
 
     ###### Connectiong to MAIN SERVER ##################
-    def connect_to_Main_Server(self, action):
+    def connect_to_Main_Server(self):
         try:
             self.connect_to_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.connect_to_server_socket.connect((MAIN_SERVER_IP, SERVER_PORT))
-            talk_with_Main_Server(action, self.connect_to_server_socket)
+            talk_with_Main_Server(self.connect_to_server_socket)
         except ConnectionRefusedError:
             print("No connection to Main Server established)")
 
@@ -71,11 +71,10 @@ if __name__ == "__main__":
 
     ############## tworzę wątek do rozmowy z serwerem głównym ##########
     while True:
-        action = input("jaka akcje chcesz wykonać :\n 1 - zalogowac sie do serwera \n 2 - polaczyc sie z innym "
-                       "uzytkownikiem \n 3 - poinformowac Main Server o zakonczeniu polaczenia\n")
         try:
-            main_server = Thread(name="My Server Thread", target=client.connect_to_Main_Server, args=(int(action),))
+            main_server = Thread(name="My Server Thread", target=client.connect_to_Main_Server, args=())
             client.list_of_threads.append(main_server)
             main_server.start()
+            time.sleep(50)
         except ConnectionRefusedError:
             print("Error creating thread talking to the main server")

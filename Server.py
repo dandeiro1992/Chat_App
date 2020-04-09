@@ -40,6 +40,7 @@ class Server:
             user = User(users_socket_for_server_connection=client_socket, ip_address=client_address[0],
                         port_1=client_address[1])
             self.list_of_connected_users.append(user)
+
             ################ Listening for connections #################
             ## When connection is established, server can talk to user with client_socket in separate thread ##
             talking_with_client_thread = Thread(name=str(client_address[0]) + ":" + str(client_address[1]),
@@ -54,7 +55,7 @@ def show(servers):
             print(i.name+"\n")
         for i in servers.list_of_connected_users:
             print(i.toString())
-        time.sleep(5)
+        time.sleep(0.5)
 
 
 server = Server()

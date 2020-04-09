@@ -4,7 +4,7 @@ import socket
 class User:
     name = ""
     login = ""
-    password = ""
+    password = "damek"
     ip_address = ""
     port_for_main_server_connection = 0
     users_server_port = 0
