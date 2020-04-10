@@ -1,49 +1,33 @@
 from threading import Thread
-from User import *
 from globals import *
 
 
-class Client:
-    name = ""
-    login = ""
-    password = ""
-    list_of_connected_users = []
+class Client(User):
+    list_of_all_users = []
     list_of_threads = []
-    connect_to_server_socket = socket.socket()
-    clients_server_port_number = 0  # port on which client is listening on
     clients_server = socket.socket()
-    ip_address = ""
-    list_of_wanted_connections = []
+    requests_core = ""
 
     ########### Creating Client - firstly creating server for Client ########
-    def __init__(self, name, login, password, number_of_port):
+    def __init__(self, login, password, users_server_port):
+        clients_server_ip_address = socket.gethostname()
         try:
-            self.name = name
-            self.login = login
-            self.password = password
-            self.clients_server_port_number = number_of_port
-            self.ip_address = socket.gethostname()
+            super().__init__(login, password, clients_server_ip_address, users_server_port, False)
             self.clients_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.clients_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.clients_server.bind((self.ip_address, self.clients_server_port_number))
+            self.clients_server.bind((self.users_server_ip_address, self.users_server_port))
             self.clients_server.listen(NUMBER_OF_USERS)
+            self.requests_core = "@" + self.login + "@" + self.password + "@" + self.users_server_ip_address + "@" + str(
+                self.users_server_port) + "@"
         except ConnectionRefusedError:
             print("Client's server not established")
 
-    def clients_server_listen_for_other_users(self):
-        ################ Listening for connections #################
-        while True:
-            user_socket, user_address = self.clients_server.accept()
-            user = User(user_socket, user_address[0], user_address[1])
-            self.list_of_connected_users.append(user)
-        ################ Listening for connections #################
-
     ###### Connectiong to MAIN SERVER ##################
-    def connect_to_Main_Server(self):
+    def send_requests_to_Main_Server(self, request):
         try:
-            self.connect_to_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.connect_to_server_socket.connect((MAIN_SERVER_IP, SERVER_PORT))
-            talk_with_Main_Server(self.connect_to_server_socket)
+            connect_to_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            connect_to_server_socket.connect((MAIN_SERVER_IP, SERVER_PORT))
+            talk_with_Main_Server(connect_to_server_socket, request)
         except ConnectionRefusedError:
             print("No connection to Main Server established)")
 
@@ -54,10 +38,10 @@ if __name__ == "__main__":
     while not good_clients_server_flag:
         try:
             port = input("Wprowadź numer portu na którym będzie słuchał server znajdujący się u klienta i inne dane "
-                         "oddzielone @\nname@login@password@number_of_port\n")
+                         "oddzielone @\nlogin@password@number_of_port\n")
             tmp = port.split("@")
             print(tmp)
-            client = Client(tmp[0], tmp[1], tmp[2], int(tmp[3]))
+            client = Client(tmp[0], tmp[1], tmp[2])
             good_clients_server_flag = True
         except OSError:
             print("Wprowadź numer portu ponownie")
@@ -67,14 +51,6 @@ if __name__ == "__main__":
         clients_server = Thread(target=client.clients_server_listen_for_other_users, args=())
         clients_server.start()
     except:
-        print("Error when waiting for new connections")
+        print("Error when waiting for new connectiom")
 
-    ############## tworzę wątek do rozmowy z serwerem głównym ##########
-    while True:
-        try:
-            main_server = Thread(name="My Server Thread", target=client.connect_to_Main_Server, args=())
-            client.list_of_threads.append(main_server)
-            main_server.start()
-            time.sleep(50)
-        except ConnectionRefusedError:
-            print("Error creating thread talking to the main server")
+    # code.interact(local=locals())

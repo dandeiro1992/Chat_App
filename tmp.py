@@ -60,3 +60,35 @@ def Main_Server_connect_to_Client_and_send_msg(ip_address, port, msg):
     socket.connect((ip_address, port))
     send_frame(socket, msg)
     socket.close()
+
+
+class Person():
+  name=""
+  surname=""
+
+  def __init__(self,name,surname):
+    self.name=name
+    self.surname=surname
+
+  def toString(self):
+    return self.name+" "+self.surname
+
+
+damian=Person("Damian","Krata")
+print(damian.toString())
+
+class Pchor(Person):
+  stopien=""
+
+  def __init__(self,name,surname,stopien=""):
+    super().__init__(name,surname)
+    self.stopien=stopien
+
+  def toString(self):
+    if self.stopien=="":
+      return super().toString()+" cywil"
+    else:
+      return super().toString()+" "+self.stopien
+
+damek=Pchor("Damianek","Sratanek","sierz")
+print(damek.toString())

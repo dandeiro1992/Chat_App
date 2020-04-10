@@ -1,8 +1,6 @@
-import select
-import socket
-from threading import Thread
+from threading import Thread, active_count
 from globals import *
-
+import code
 
 class Server:
     list_of_all_users = []
@@ -22,11 +20,11 @@ class Server:
     def talk_with_client(self, client_socket):
         # #### I use the synchronous calls, Client always begins the conversation, because server accomplishes
         # requests and informs ###########
-        while True:  # receiving a request from Client
-            frame = receive_frame(client_socket)
-            data = prepare_data(frame)
-            print(data)
-            Main_Server_serve_client(data, client_socket, self.list_of_all_users)
+        # while True:  # receiving a request from Client
+        frame = receive_frame(client_socket)
+        data = prepare_data(frame)
+        print(data)
+        Main_Server_serve_client(data, client_socket, self.list_of_all_users)
 
     def start_listening_to_connections(self):
         ################ updating list of connected users every 5 seconds #######
@@ -47,12 +45,14 @@ class Server:
 def show(servers):
     while True:
         print("Working threads:")
+        print("liczba aktywnych wątków "+str(active_count()))
         for i in servers.list_of_threads:
             print(i.name + "\n")
         for i in servers.list_of_all_users:
             print(i.toString())
         time.sleep(0.5)
 
+# code.interact(local=locals())
 
 server = Server()
 ################ checking threads #############

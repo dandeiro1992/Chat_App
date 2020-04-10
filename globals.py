@@ -11,7 +11,6 @@ SEPARATOR = "@"
 
 
 def receive_frame(socket):
-    print("*****************")
     msg_len = 0
     full_msg = ""
     new_msg = True
@@ -20,16 +19,12 @@ def receive_frame(socket):
         msg = msg.decode('utf-8')
         if len(msg) < HEADER_SIZE and new_msg == True:
             break
-        print(msg)
         if new_msg:
-            print(f"lalalala : {msg[:HEADER_SIZE]}")
             msg_len = int(msg[:HEADER_SIZE])
-            print(f"lalalala : {msg_len}")
             new_msg = False
             full_msg += msg[HEADER_SIZE:]
         else:
             full_msg += msg
-        print("length of full message" + str(len(full_msg)))
         if len(full_msg) == msg_len:
             return full_msg
 
@@ -157,8 +152,8 @@ def Main_Server_serve_client(data, client_socket, list_of_all_users):
             msg_to_source = "16"  # sending to user that the destination is not connected
             Main_Server_connect_to_Client_and_send_msg(users_server_ip_address, users_server_port, msg_to_source)
         else:
-            msg_to_source = "15@" + destination_login + "@" + ip_address + "@" + str(
-                port)  # M_S found the ip address and port and sends it back to user
+            msg_to_source = "15@" + destination_login + "@" + ip_address + "@" + str(port)  # M_S found the ip
+            # address and port and sends it back to user
             Main_Server_connect_to_Client_and_send_msg(users_server_ip_address, users_server_port, msg_to_source)
     elif state == '3':  # sending a message that user becomes disconnected
         if login in [i.login for i in list_of_all_users]:
@@ -166,6 +161,7 @@ def Main_Server_serve_client(data, client_socket, list_of_all_users):
                 if login == j.login:
                     j.connected = False
     client_socket.close()
+
 
 def search_for_user_data(login, list_of_all_users):
     if login in [i.login for i in list_of_all_users]:
@@ -177,6 +173,13 @@ def search_for_user_data(login, list_of_all_users):
 
 
 def Main_Server_connect_to_Client_and_send_msg(ip_address, port, msg):
+    sockets = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sockets.connect((ip_address, port))
+    send_frame(sockets, msg)
+    sockets.close()
+
+
+def client_connect_to_Main_Server_and_send_msg(ip_address, port, msg):
     sockets = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sockets.connect((ip_address, port))
     send_frame(sockets, msg)
@@ -198,20 +201,31 @@ def Main_Server_check_connections(list_of_all_users, list_of_connected_users):
 ## 1 sends data - updating or creating Client user in Server - when done, Main Server knows that Client is connected ###
 ## 2 - Client sends request for talking with other user ##
 ## 3 - Client sends this, when leaving app - telling the Main Server, that it is not connected ##
-def talk_with_Main_Server(server_socket):
-    while True:
-        action = input("jaka akcje chcesz wykonać :\n 1 - zalogowac sie do serwera \n 2 - polaczyc sie z innym "
-                   "uzytkownikiem \n 3 - poinformowac Main Server o zakonczeniu polaczenia\n")
-        if action == 1:
-            msg = input("Przedstaw się: \n np. 1@name@login@password@port")
-            send_frame(server_socket, msg)
-            # server_socket.close()
-        elif action == 2:
-            msg = input("Chcę się połączyć z  \n np. 2@destination_login@my_login@ip_address@port")
-            send_frame(server_socket, msg)
+def talk_with_Main_Server(server_socket, request):
+    data = prepare_data(request)
+    status = data[0]
+    ## every time client has to push the request to the server
+    send_frame(server_socket, request)
+    ##but accordingly to the request status, handling server responses differs
+    if status == '1':
+        msg = receive_frame(server_socket)
+        if msg not in ['12', '13']:
+            server_socket.close(0)
+            raise Exception
+    elif status == '2':
+        msg = receive_frame(server_socket)
+        if msg == '16':
+            print("destination login is not connected")
             server_socket.close()
-        elif action == 3:
-            msg = input("Koncze połaczenie \n 3@login")
-            send_frame(server_socket, msg)
-            server_socket.close()
-        time.wait(20)
+        else:
+            msg = receive_frame(server_socket)
+            response_data = prepare_data(msg)
+            if response_data[0] == '15':
+                destination_login = data[1]
+                destination_ip = data[2]
+                destination_port = data[3]
+                server_socket.close(0)
+                return destination_login, destination_ip, destination_port
+            else:
+                server_socket.close(0)
+                raise Exception
