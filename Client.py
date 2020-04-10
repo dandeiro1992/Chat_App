@@ -10,7 +10,7 @@ class Client(User):
 
     ########### Creating Client - firstly creating server for Client ########
     def __init__(self, login, password, users_server_port):
-        clients_server_ip_address = socket.gethostname()
+        clients_server_ip_address = socket.gethostbyname(socket.gethostname())
         try:
             super().__init__(login, password, clients_server_ip_address, users_server_port, False)
             self.clients_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,7 +27,7 @@ class Client(User):
         try:
             connect_to_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             connect_to_server_socket.connect((MAIN_SERVER_IP, SERVER_PORT))
-            talk_with_Main_Server(connect_to_server_socket, request)
+            return talk_with_Main_Server(connect_to_server_socket, request)
         except ConnectionRefusedError:
             print("No connection to Main Server established)")
 
@@ -53,4 +53,3 @@ if __name__ == "__main__":
     except:
         print("Error when waiting for new connectiom")
 
-    # code.interact(local=locals())

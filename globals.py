@@ -26,6 +26,7 @@ def receive_frame(socket):
         else:
             full_msg += msg
         if len(full_msg) == msg_len:
+            print("cala wiadomosc: " + full_msg)
             return full_msg
 
 
@@ -134,7 +135,7 @@ def Main_Server_serve_client(data, client_socket, list_of_all_users):
                         j.users_server_port = users_server_port
                         j.connected = True
                         msg_to_source = "12"  # it says that server updated data
-                        Main_Server_connect_to_Client_and_send_msg(users_server_ip_address, users_server_port,
+                        Main_Server_connect_to_Client_and_send_msg(client_socket,
                                                                    msg_to_source)
                     else:
                         pass  # here will be password verification frame sent
@@ -144,18 +145,21 @@ def Main_Server_serve_client(data, client_socket, list_of_all_users):
             # and this user should be appended to all users list
             list_of_all_users.append(user)
             msg_to_source = "13"  # it says that MS added user
-            Main_Server_connect_to_Client_and_send_msg(users_server_ip_address, users_server_port, msg_to_source)
+            Main_Server_connect_to_Client_and_send_msg(client_socket, msg_to_source)
     elif state == '2':  # I want to connect to some destination login, and need its data
         destination_login = data[5]
         ip_address, port = search_for_user_data(destination_login, list_of_all_users)
-        if ip_address == "":
+        print("******************")
+        print(ip_address)
+        print(str(port))
+        if len(ip_address) < 5:
             msg_to_source = "16"  # sending to user that the destination is not connected
-            Main_Server_connect_to_Client_and_send_msg(users_server_ip_address, users_server_port, msg_to_source)
+            Main_Server_connect_to_Client_and_send_msg(client_socket, msg_to_source)
         else:
             msg_to_source = "15@" + destination_login + "@" + ip_address + "@" + str(port)  # M_S found the ip
             # address and port and sends it back to user
-            Main_Server_connect_to_Client_and_send_msg(users_server_ip_address, users_server_port, msg_to_source)
-    elif state == '3':  # sending a message that user becomes disconnected
+            Main_Server_connect_to_Client_and_send_msg(client_socket, msg_to_source)
+    elif state == '3':  # sending a message that user becomes disdandeiro@damian@1235connected
         if login in [i.login for i in list_of_all_users]:
             for j in list_of_all_users:
                 if login == j.login:
@@ -172,9 +176,7 @@ def search_for_user_data(login, list_of_all_users):
         return "", 0
 
 
-def Main_Server_connect_to_Client_and_send_msg(ip_address, port, msg):
-    sockets = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sockets.connect((ip_address, port))
+def Main_Server_connect_to_Client_and_send_msg(sockets, msg):
     send_frame(sockets, msg)
     sockets.close()
 
@@ -202,30 +204,38 @@ def Main_Server_check_connections(list_of_all_users, list_of_connected_users):
 ## 2 - Client sends request for talking with other user ##
 ## 3 - Client sends this, when leaving app - telling the Main Server, that it is not connected ##
 def talk_with_Main_Server(server_socket, request):
+    destination_login = ""
+    destination_ip = ""
+    destination_port = 0
     data = prepare_data(request)
     status = data[0]
+    print("wysyłam ramke: " + request)
     ## every time client has to push the request to the server
     send_frame(server_socket, request)
+    print("hehe ramka wyslana")
     ##but accordingly to the request status, handling server responses differs
     if status == '1':
         msg = receive_frame(server_socket)
         if msg not in ['12', '13']:
             server_socket.close(0)
-            raise Exception
+            return destination_login, destination_ip, destination_port, False
+        else:
+            return destination_login, destination_ip, destination_port, True
     elif status == '2':
         msg = receive_frame(server_socket)
+        print("Otrtzyamłęm ramke: " + msg)
         if msg == '16':
             print("destination login is not connected")
             server_socket.close()
+            return destination_login, destination_ip, destination_port, False
         else:
-            msg = receive_frame(server_socket)
             response_data = prepare_data(msg)
             if response_data[0] == '15':
                 destination_login = data[1]
                 destination_ip = data[2]
                 destination_port = data[3]
                 server_socket.close(0)
-                return destination_login, destination_ip, destination_port
+                return destination_login, destination_ip, destination_port, True
             else:
                 server_socket.close(0)
-                raise Exception
+                return destination_login, destination_ip, destination_port, True

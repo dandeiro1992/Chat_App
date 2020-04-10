@@ -1,5 +1,6 @@
-from threading import Thread
 from tkinter import *
+
+from Client import *
 
 
 class Client_app:
@@ -26,30 +27,62 @@ class Client_app:
 
     def make_conversation(self, destination_login):
         #     create window for conversation
-        self.init_new_conversation_frame(destination_login)
+        request = "2@" + self.client.login + "@" + self.client.password + "@" + self.client.users_server_ip_address + "@" + str(
+            self.client.users_server_port) + "@" + destination_login
+        # main_server = Thread(name="Main Server Thread", target=client.send_requests_to_Main_Server, args=(request,))
+        # client.list_of_threads.append(main_server)
+        # main_server.start()
+        destination_login, destination_ip, destination_port, flag = self.client.send_requests_to_Main_Server(request)
+        if True:
+            self.init_new_conversation_frame(destination_login)
+        else:
+            print("Returned false")
 
     def double_click(self, event):
         item = self.list_of_users.get('active')
         conversation = Thread(target=self.make_conversation, args=(str(item),))
-        conversation.daemon=True
+        conversation.daemon = True
         conversation.start()
 
-    def __init__(self):
+    def __init__(self, client):
+        ## fiorst tell the server that I am connected
+        request = "1@" + client.login + "@" + client.password + "@" + client.users_server_ip_address + "@" + str(
+            client.users_server_port)
+        self.client = client
+        destination_login, destination_ip, destination_port, flag = self.client.send_requests_to_Main_Server(request)
+        if not flag:
+            print("NO connection to server estanlished")
         scrollbar = Scrollbar(self.main_window)
         scrollbar.pack(side=RIGHT, fill=Y)
         self.list_of_users.config(yscrollcommand=scrollbar.set)
         self.list_of_users.insert(1, "Ola")
         self.list_of_users.insert(2, "Alina")
         self.list_of_users.insert(3, "Damian")
-        self. list_of_users.pack(side=LEFT, fill=BOTH)
+        self.list_of_users.pack(side=LEFT, fill=BOTH)
         scrollbar.config(command=self.list_of_users.yview())
         self.list_of_users.bind('<Double-1>', self.double_click)
         self.main_window.mainloop()
 
-    def start_conversation(self, event):
-        print("Witaj swiecie")
-
 
 if __name__ == '__main__':
-    main_application = Client_app()
+    good_clients_server_flag = False
+    ########### Tworzę Clienta - automatycznie tworzy się server klienta ####
+    while not good_clients_server_flag:
+        try:
+            port = input("Wprowadź numer portu na którym będzie słuchał server znajdujący się u klienta i inne dane "
+                         "oddzielone @\nlogin@password@number_of_port\n")
+            tmp = port.split("@")
+            print(tmp)
+            client = Client(tmp[0], tmp[1], int(tmp[2]))
+            good_clients_server_flag = True
+        except OSError:
+            print("Wprowadź numer portu ponownie")
+
+    ############## tworze wątek do obsługi serwera na kliencie #########
+    # try:
+    # clients_server = Thread(target=client.clients_server_listen_for_other_users, args=())
+    # clients_server.start()
+    # except:
+    #     print("Error when waiting for new connectiom")
+    main_application = Client_app(client)
 # main_application.main_window.mainloop()
