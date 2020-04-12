@@ -1,6 +1,8 @@
 import time
 from User import *
 import socket
+import json
+import pickle
 
 MAIN_SERVER_IP = "127.0.0.1"
 SERVER_PORT = 1234
@@ -12,11 +14,11 @@ SEPARATOR = "@"
 
 def receive_frame(socket):
     msg_len = 0
-    full_msg = ""
+    full_msg = b''
     new_msg = True
     while True:
         msg = socket.recv(FRAME_SIZE)
-        msg = msg.decode('utf-8')
+        #msg = msg#.decode('utf-8')
         if len(msg) < HEADER_SIZE and new_msg == True:
             break
         if new_msg:
@@ -26,15 +28,17 @@ def receive_frame(socket):
         else:
             full_msg += msg
         if len(full_msg) == msg_len:
-            print("cala wiadomosc: " + full_msg)
-            return full_msg
+            d=pickle.loads(full_msg)
+            print("cala wiadomosc: " + d["msg"])
+            return d["msg"]
 
 
 def send_frame(socket, msg):
-    msg = f'{len(msg):<{HEADER_SIZE}}' + msg
+    msg = pickle.dumps(msg)
+    msg = bytes(f'{len(msg):<{HEADER_SIZE}}','utf-8') + msg
     print("-------------------\n")
     print(msg)
-    socket.send(bytes(msg, 'utf-8'))
+    socket.send(msg)
     return len(msg) + HEADER_SIZE
 
 
@@ -181,9 +185,9 @@ def Main_Server_connect_to_Client_and_send_msg(sockets, msg):
     sockets.close()
 
 
-def client_connect_to_Main_Server_and_send_msg(ip_address, port, msg):
+def client_connect_to_and_send_msg(ip_address, port, msg):
     sockets = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sockets.connect((ip_address, port))
+    sockets.connect((ip_address, int(port)))
     send_frame(sockets, msg)
     sockets.close()
 
@@ -204,6 +208,7 @@ def Main_Server_check_connections(list_of_all_users, list_of_connected_users):
 ## 2 - Client sends request for talking with other user ##
 ## 3 - Client sends this, when leaving app - telling the Main Server, that it is not connected ##
 def talk_with_Main_Server(server_socket, request):
+    print("Request wygada tak:" + request)
     destination_login = ""
     destination_ip = ""
     destination_port = 0
@@ -217,12 +222,13 @@ def talk_with_Main_Server(server_socket, request):
     if status == '1':
         msg = receive_frame(server_socket)
         if msg not in ['12', '13']:
-            server_socket.close(0)
+            server_socket.close()
             return destination_login, destination_ip, destination_port, False
         else:
             return destination_login, destination_ip, destination_port, True
     elif status == '2':
         msg = receive_frame(server_socket)
+        print("wiadomość lalala" + msg)
         print("Otrtzyamłęm ramke: " + msg)
         if msg == '16':
             print("destination login is not connected")
@@ -231,11 +237,56 @@ def talk_with_Main_Server(server_socket, request):
         else:
             response_data = prepare_data(msg)
             if response_data[0] == '15':
-                destination_login = data[1]
-                destination_ip = data[2]
-                destination_port = data[3]
-                server_socket.close(0)
+                print("jestem tutaj")
+                destination_login = response_data[1]
+                destination_ip = response_data[2]
+                destination_port = response_data[3]
+                server_socket.close()
+                print(destination_login + destination_ip + str(destination_port))
                 return destination_login, destination_ip, destination_port, True
             else:
-                server_socket.close(0)
+                server_socket.close()
                 return destination_login, destination_ip, destination_port, True
+
+
+def get_frame_from_user(socket, list_of_all_users, user, client):
+    msg = json.loads(receive_frame(socket))
+    file = open(client.login + "/" + msg["sender_login"] + ".json", "w", encoding='utf-8')
+    temp = json.load(file)
+    temp["Messages"].append(msg)
+    json.dump(temp, file, ensure_ascii=False)
+    file.close()
+    socket.close()
+    user.login = msg["sender_login"]
+    user.users_server_ip_address = msg["sender_ip"]
+    user.users_server_port = msg["sender_port"]
+    if user.login in [i.login for i in list_of_all_users]:
+        for i in list_of_all_users:
+            if i.login == user.login:
+                i.users_server_ip_address = user.users_server_ip_address
+                i.users_server_port = user.users_server_port
+                i.connected = True
+    else:
+        list_of_all_users.append(user)
+
+
+def send_frame_to_user(client, msg, login, ip_address, port):
+    sender_login = client.login
+    sender_ip = client.users_server_ip_address
+    sender_port = client.users_server_port
+    receiver_login = login
+    receiver_ip = ip_address
+    receiver_port = port
+    added = "false"
+    json_frame = "{" + f'"sender_login" : "{sender_login}","sender_ip" : "{sender_ip}","sender_port" : {str(sender_port)},"receiver_login" : "{receiver_login}","receiver_ip" : "{receiver_ip}","receiver_port" : {receiver_port},"added" : {added},"msg" : "' + msg + '"}'
+    print("json_frame=" + json_frame)
+    print(client.login + "/" + login + ".json")
+    file = open(client.login + "/" + login + ".json", "r", encoding='utf-8')
+    temp = json.load(file)
+    file.close()
+    json_frame_object = json.loads(json_frame, encoding='utf-8')
+    client_connect_to_and_send_msg(ip_address, port, json_frame_object)
+    temp["Messages"].append(json_frame_object)
+    file = open(client.login + "/" + login + ".json", "w", encoding='utf-8')
+    json.dump(temp, file, ensure_ascii=False)
+    file.close()

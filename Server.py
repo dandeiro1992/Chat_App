@@ -38,7 +38,7 @@ class Server:
             ## When connection is established, server can talk to user with client_socket in separate thread ##
             talking_with_client_thread = Thread(name=str(client_address[0]) + ":" + str(client_address[1]),
                                                 target=self.talk_with_client, args=(client_socket,))
-            self.list_of_threads.append(talking_with_client_thread)
+            # self.list_of_threads.append(talking_with_client_thread)
             talking_with_client_thread.start()
 
 

@@ -1,0 +1,15 @@
+{
+	"Messages" :
+		[
+			{
+				"sender_login" : "Damian",
+				"sender_ip" : "127.0.0.1",
+				"sender_port" : 1235,
+				"receiver_login" : "Ola",
+				"receiver_ip" : "127.0.0.1",
+				"receiver_port" : 1236,
+				"added" : false,
+				"msg" : "Ola ma kota ąłćź"
+			}
+		]
+}

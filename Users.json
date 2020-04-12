@@ -1,0 +1,24 @@
+{
+	"Users" :
+		[
+			{
+				"login" : "Damian",
+				"password" : "",
+				"users_server_ip_address" : "127.0.0.1",
+				"users_server_port" : 1235
+			},
+			{
+				"login" : "Ola",
+				"password" : "",
+				"users_server_ip_address" : "127.0.0.1",
+				"users_server_port" : 1236
+			},
+
+			{
+				"login" : "Alina",
+				"password" : "",
+				"users_server_ip_address" : "127.0.0.1",
+				"users_server_port" : 1237
+			}
+		]
+}

@@ -13,6 +13,5 @@ class User:
         self.connected = connected
 
     def toString(self):
-        return f'login {self.login}, \npassword {self.password}, \nip address {self.users_server_ip_address}, ' \
-               f'\n, \nuser\'s server\'' \
-               f's port {self.users_server_port}, is_connected? {self.connected} '
+        return f'login {self.login}, \npassword {self.password}, \nip address {self.users_server_ip_address}, \nuser' \
+               f'\'s server\'s port {self.users_server_port}, is_connected? {self.connected} '
