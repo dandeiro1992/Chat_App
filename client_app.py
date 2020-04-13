@@ -4,11 +4,11 @@ from tkinter import *
 from Client import *
 
 
-class Client_app:
-    main_window = Tk()
-    list_of_users = Listbox(main_window)
+class Chat_Window:
 
-    def init_new_conversation_frame(self, destination_login, destination_ip, destination_port):
+    def __init__(self, client, destination_login, destination_ip, destination_port):
+        self.destination_login = destination_login
+        self.client = client
         self.window = Tk()
         self.window.title("Chat with " + destination_login)
         self.window.geometry("700x700")
@@ -36,7 +36,32 @@ class Client_app:
                              command=partial(self.send_message_to_user,
                                              destination_login, destination_ip, destination_port))
         self.button.pack()
+        thread_getting_incoming_messages = Thread(target=self.get_incoming_messages, args=())
+        thread_getting_incoming_messages.start()
         self.window.mainloop()
+
+    def get_incoming_messages(self):
+        while True:
+            for i in self.client.list_of_incoming_messages:
+                if i["sender_login"] == self.destination_login:
+                    self.text_box_1.tag_configure('tag-right', justify='right')
+                    self.text_box_1.insert("1.0", ": " + i["sender_login"] + "\n" + i["msg"] + "\n", 'tag-right')
+                    self.client.list_of_incoming_messages.remove(i)
+                else:
+                    pass
+            time.sleep(1)
+
+    def send_message_to_user(self, destination_login, destination_ip, destination_port):
+        message_sent = send_frame_to_user(self.client, self.text_box_2.get("1.0", "end-1c"), destination_login,
+                                          destination_ip, destination_port)
+        self.text_box_2.delete("1.0", END)
+        self.text_box_1.insert("1.0", message_sent["sender_login"] + ": " + message_sent["msg"] + "\n")
+
+
+class Client_app:
+    main_window = Tk()
+    list_of_users = Listbox(main_window)
+    list_of_opened_chat_windows = []
 
     def make_conversation(self, destination_login):
         #     create window for conversation
@@ -47,15 +72,10 @@ class Client_app:
         # main_server.start()
         destination_login, destination_ip, destination_port, flag = self.client.send_requests_to_Main_Server(request)
         if flag:
-            self.init_new_conversation_frame(destination_login, destination_ip, destination_port)
+            chat = Chat_Window(self.client, destination_login, destination_ip, destination_port)
+            self.list_of_opened_chat_windows.append(chat)
         else:
             print("Returned false")
-
-    def send_message_to_user(self, destination_login, destination_ip, destination_port):
-        message_sent = send_frame_to_user(self.client, self.text_box_2.get("1.0", "end-1c"), destination_login,
-                                          destination_ip, destination_port)
-        self.text_box_2.delete("1.0", END)
-        self.text_box_1.insert("1.0", message_sent["sender_login"]+": "+message_sent["msg"]+"\n")
 
     def double_click(self, event):
         item = self.list_of_users.get('active')
@@ -80,7 +100,14 @@ class Client_app:
         self.list_of_users.pack(side=LEFT, fill=BOTH)
         scrollbar.config(command=self.list_of_users.yview)
         self.list_of_users.bind('<Double-1>', self.double_click)
+        # thread = Thread(target=self.print_all, args=())
+        # thread.start()
         self.main_window.mainloop()
+
+    # def print_all(self):
+    #     while True:
+    #         for i in self.client.list_of_incoming_messages:
+    #             print(i)
 
 
 if __name__ == '__main__':

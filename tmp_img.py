@@ -115,17 +115,20 @@ import sys
 #
 #
 # print(receive_frame(w))
+# from functools import partial
+import time
 from functools import partial
+from threading import Thread
 
 from tkinter import *
 
 
-def create_first():
-    okno = small_window("hej")
+def create_first(big_window):
+    big_window.list_of_small_windows.append(small_window("hej"))
 
 
-def create_second():
-    okno = small_window("dupcia")
+def create_second(big_window):
+    big_window.list_of_small_windows.append(small_window("dupcia"))
 
 
 def show(name, text_box):
@@ -134,30 +137,53 @@ def show(name, text_box):
 
 
 class big_window:
+    list_of_small_windows = []
 
     def __init__(self):
         window = Tk()
         window.title = ("big window")
         window.geometry("300x300")
-        button_1 = Button(window, text="first", command=create_first)
+        button_1 = Button(window, text="first", command=partial(create_first, self))
         button_1.pack()
-        button_2 = Button(window, text="second", command=create_second)
+        button_2 = Button(window, text="second", command=partial(create_second, self))
         button_2.pack()
+        button_3 = Button(window, text="second", command=self.insert)
+        button_3.pack()
         window.mainloop()
+
+    def dawaj(self):
+        while True:
+            for i in self.list_of_small_windows:
+                print(i.name)
+                i.text_box.insert("1.0", "Damian")
+            time.sleep(1)
+
+
+    def insert(self):
+        thread_1 = Thread(target=self.dawaj, args=())
+        thread_1.start()
 
 
 class small_window:
 
     def __init__(self, name):
+        self.name = name
         window = Tk()
         window.title = ("small window")
         window.geometry("200x200")
         self.text_box = Text(window, bg="grey")
         self.text_box.pack()
-        button_1 = Button(window, text="first", command=partial(show,name, self.text_box))
+        button_1 = Button(window, text="first", command=partial(show, name, self.text_box))
         button_1.pack()
+        self.text_box.tag_configure('tag-center', justify='right')
+        self.text_box.insert('1.0', 'text ' * 5+"\n", 'tag-center')
+        self.text_box.insert('1.0', 'text2 ' * 5+"\n", 'tag-center')
+        # self.text_box.insert("1.0","Damasndsaknfasklnflas")
         window.mainloop()
 
 
 if __name__ == '__main__':
-    big = big_window()
+    thread_1=Thread(target=big_window,args=())
+    thread_1.start()
+    # thread = Thread(target=big.insert, args=())
+    # thread.start()

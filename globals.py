@@ -191,6 +191,7 @@ def get_frame_from_user(socket, list_of_all_users, user, login):
                 i.connected = True
     else:
         list_of_all_users.append(user)
+    print("Otrzymałem: "+str(msg))
     return msg
 
 
