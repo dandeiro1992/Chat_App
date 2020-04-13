@@ -7,6 +7,7 @@ class Client(User):
     list_of_threads = []
     clients_server = socket.socket()
     requests_core = ""
+    message_tmp={}
 
     ########### Creating Client - firstly creating server for Client ########
     def __init__(self, login, password, users_server_port):
@@ -37,7 +38,7 @@ class Client(User):
         while True:
             user_socket, user_address = self.clients_server.accept()
             user = User(ip_address=user_address[0], port_1=user_address[1])
-            get_frame_from_user(user_socket, self.list_of_all_users, user,self.login)
+            self.message_tmp=get_frame_from_user(user_socket, self.list_of_all_users, user, self.login)
         ################ Listening for connections #################
 
     def initialise_list_of_all_users(self):
@@ -47,24 +48,3 @@ class Client(User):
         for i in list_from_json["Users"]:
             user = User(i["login"], i["password"], i["users_server_ip_address"], i["users_server_port"], False)
             self.list_of_all_users.append(user)
-
-# if __name__ == "__main__":
-#     good_clients_server_flag = False
-#     ########### Tworzę Clienta - automatycznie tworzy się server klienta ####
-#     while not good_clients_server_flag:
-#         try:
-#             port = input("Wprowadź numer portu na którym będzie słuchał server znajdujący się u klienta i inne dane "
-#                          "oddzielone @\nlogin@password@number_of_port\n")
-#             tmp = port.split("@")
-#             print(tmp)
-#             client = Client(tmp[0], tmp[1], tmp[2])
-#             good_clients_server_flag = True
-#         except OSError:
-#             print("Wprowadź numer portu ponownie")
-#
-#     ############## tworze wątek do obsługi serwera na kliencie #########
-#     try:
-#         clients_server = Thread(target=client.clients_server_listen_for_other_users, args=())
-#         clients_server.start()
-#     except:
-#         print("Error when waiting for new connectiom")

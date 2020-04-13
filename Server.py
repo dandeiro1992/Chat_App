@@ -23,7 +23,6 @@ class Server:
         # while True:  # receiving a request from Client
         frame = receive_frame(client_socket)
         data = prepare_data(frame)
-        print(data)
         Main_Server_serve_client(data, client_socket, self.list_of_all_users)
 
     def start_listening_to_connections(self):

@@ -13,14 +13,12 @@ SEPARATOR = "@"
 
 
 def receive_frame(socket):
-    msg_len = 0
     full_msg = b''
     new_msg = True
     while True:
         msg = socket.recv(FRAME_SIZE)
-        #msg = msg#.decode('utf-8')
-        if len(msg) < HEADER_SIZE and new_msg == True:
-            break
+        # if len(msg) < HEADER_SIZE and new_msg == True:
+        #     break
         if new_msg:
             msg_len = int(msg[:HEADER_SIZE])
             new_msg = False
@@ -28,18 +26,15 @@ def receive_frame(socket):
         else:
             full_msg += msg
         if len(full_msg) == msg_len:
-            d=pickle.loads(full_msg)
-            print("cala wiadomosc: " + d["msg"])
-            return d["msg"]
+            d = pickle.loads(full_msg)
+            return d
 
 
 def send_frame(socket, msg):
     msg = pickle.dumps(msg)
-    msg = bytes(f'{len(msg):<{HEADER_SIZE}}','utf-8') + msg
-    print("-------------------\n")
-    print(msg)
+    msg = bytes(f'{len(msg):<{HEADER_SIZE}}', 'utf-8') + msg
     socket.send(msg)
-    return len(msg) + HEADER_SIZE
+    return len(msg)
 
 
 def prepare_data(frame):
@@ -55,72 +50,6 @@ def find_socket_by_login(source, login):
         if i.login == login:
             return i.users_socket_for_server_connection
 
-
-# def Main_Server_serve_client_tmp(data, client_socket, list_of_all_users, list_of_connected_users):
-#     print(data)
-#     if data[0] == "1":  # add or update data in list_of_all users / list_of_connected_users on Main Server
-#         name = data[1]
-#         login = data[2]
-#         password = data[3]
-#         users_server_port = data[4]
-#         ######## update ########
-#         for i in list_of_all_users:
-#             if i.login == login:
-#                 if i.password == password:
-#                     i.users_server_port = int(users_server_port)
-#                     list_of_connected_users.append(i)
-#                     send_frame(client_socket, "12")  # state "12"  says: "you were in a base, I updated your profile"
-#                     print("12")
-#                     # client_socket.close()
-#                     break
-#         ####### add user #######
-#         for i in list_of_all_users:
-#             if i.users_socket_for_server_connection == client_socket:
-#                 i.name = name
-#                 i.login = login
-#                 i.password = password
-#                 i.users_server_port = int(users_server_port)
-#                 list_of_connected_users.append(i)
-#                 send_frame(client_socket, "13")  # state "13" says: "I added you to the base"
-#                 print("13")
-#                 # client_socket.close()
-#                 break
-#     if data[0] == "2":  # Client says to server: I want you (Server) to connect me to somebody
-#         destination_login = data[1]
-#         my_login = data[2]
-#         ip_address = data[3]
-#         port = data[4]  # for example - I want to connect to Ola who has login ola, I send a frame
-#         # 2@ola@my_login@my_ip_address@my_listening_port
-#         # then, the Main Server checks if ola is connected and sends her and me info
-#         if destination_login in [i.login for i in list_of_connected_users]:
-#             msg = "14@" + my_login + "@" + ip_address + "@" + port  # Please connect to ...., he wants to talk to you
-#             print(msg)
-#             send_frame(find_socket_by_login(list_of_connected_users, destination_login), msg)
-#             send_frame(client_socket, "15")  # sending confirmation of sending request to ola
-#             print("15")
-#             counter_of_people_connected = 2
-#             # client_socket.close()
-#         else:
-#             send_frame(client_socket, "16")  # sending that ola is not connected
-#             print("16")
-#             # client_socket.close()
-#             counter_of_people_connected = 1
-#         ### finally terminate connection and (in comments)delete users from list of connected users ##
-#         # counter_of_deleted_users = 0
-#         # for i in list_of_connected_users:
-#         #     if i.login == my_login or i.login == destination_login:
-#         #         list_of_connected_users.remove(i)
-#         #         counter_of_deleted_users += 1
-#         #         i.users_socket_for_server_connection.close()
-#         #         if counter_of_deleted_users == counter_of_people_connected:
-#         #             print("deleted users from list_of_connected users")
-#         #             break
-#     if data[0] == "3":  # sending a message to the server that the user is not longer available and should be removed from connected users list
-#         login = data[0]
-#         for i in list_of_connected_users:
-#             if i.login == login:
-#                 list_of_connected_users.remove(i)
-#                 client_socket.close()
 
 def Main_Server_serve_client(data, client_socket, list_of_all_users):
     state = data[0]
@@ -208,16 +137,13 @@ def Main_Server_check_connections(list_of_all_users, list_of_connected_users):
 ## 2 - Client sends request for talking with other user ##
 ## 3 - Client sends this, when leaving app - telling the Main Server, that it is not connected ##
 def talk_with_Main_Server(server_socket, request):
-    print("Request wygada tak:" + request)
     destination_login = ""
     destination_ip = ""
     destination_port = 0
     data = prepare_data(request)
     status = data[0]
-    print("wysyłam ramke: " + request)
     ## every time client has to push the request to the server
     send_frame(server_socket, request)
-    print("hehe ramka wyslana")
     ##but accordingly to the request status, handling server responses differs
     if status == '1':
         msg = receive_frame(server_socket)
@@ -228,32 +154,29 @@ def talk_with_Main_Server(server_socket, request):
             return destination_login, destination_ip, destination_port, True
     elif status == '2':
         msg = receive_frame(server_socket)
-        print("wiadomość lalala" + msg)
-        print("Otrtzyamłęm ramke: " + msg)
         if msg == '16':
-            print("destination login is not connected")
             server_socket.close()
             return destination_login, destination_ip, destination_port, False
         else:
             response_data = prepare_data(msg)
             if response_data[0] == '15':
-                print("jestem tutaj")
                 destination_login = response_data[1]
                 destination_ip = response_data[2]
                 destination_port = response_data[3]
                 server_socket.close()
-                print(destination_login + destination_ip + str(destination_port))
                 return destination_login, destination_ip, destination_port, True
             else:
                 server_socket.close()
                 return destination_login, destination_ip, destination_port, True
 
 
-def get_frame_from_user(socket, list_of_all_users, user, client):
-    msg = json.loads(receive_frame(socket))
-    file = open(client.login + "/" + msg["sender_login"] + ".json", "w", encoding='utf-8')
+def get_frame_from_user(socket, list_of_all_users, user, login):
+    msg = receive_frame(socket)#json.loads(receive_frame(socket))
+    file = open(login + "/" + msg["sender_login"] + ".json", "r", encoding='utf-8')
     temp = json.load(file)
+    file.close()
     temp["Messages"].append(msg)
+    file = open(login + "/" + msg["sender_login"] + ".json", "w", encoding='utf-8')
     json.dump(temp, file, ensure_ascii=False)
     file.close()
     socket.close()
@@ -268,6 +191,7 @@ def get_frame_from_user(socket, list_of_all_users, user, client):
                 i.connected = True
     else:
         list_of_all_users.append(user)
+    return msg
 
 
 def send_frame_to_user(client, msg, login, ip_address, port):
@@ -290,3 +214,4 @@ def send_frame_to_user(client, msg, login, ip_address, port):
     file = open(client.login + "/" + login + ".json", "w", encoding='utf-8')
     json.dump(temp, file, ensure_ascii=False)
     file.close()
+    return json_frame_object

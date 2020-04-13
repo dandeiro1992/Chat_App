@@ -1,6 +1,6 @@
 class User:
     login = ""
-    password = "damek"
+    password = ""
     users_server_ip_address = ""  # ip address of user's server
     users_server_port = 0
     connected = False

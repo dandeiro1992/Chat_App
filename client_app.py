@@ -47,22 +47,19 @@ class Client_app:
         # main_server.start()
         destination_login, destination_ip, destination_port, flag = self.client.send_requests_to_Main_Server(request)
         if flag:
-            print("daestination login" + destination_login)
             self.init_new_conversation_frame(destination_login, destination_ip, destination_port)
         else:
             print("Returned false")
 
-    def send_message_to_user(self,destination_login,destination_ip,destination_port):
-        send_frame_to_user(self.client,self.text_box_2.get("1.0", "end-1c"),destination_login,destination_ip,destination_port)
-        print(self.text_box_2.get("1.0", "end-1c")+str(destination_port)+destination_ip+destination_login)
+    def send_message_to_user(self, destination_login, destination_ip, destination_port):
+        message_sent = send_frame_to_user(self.client, self.text_box_2.get("1.0", "end-1c"), destination_login,
+                                          destination_ip, destination_port)
         self.text_box_2.delete("1.0", END)
-        # send_frame_to_user(self.client, msg, "Ola", "127.0.1.1", 1236)
+        self.text_box_1.insert("1.0", message_sent["sender_login"]+": "+message_sent["msg"]+"\n")
 
     def double_click(self, event):
         item = self.list_of_users.get('active')
-        print(item + "hejehejejehe")
         conversation = Thread(target=self.make_conversation, args=(str(item),))
-        print(item)
         conversation.daemon = True
         conversation.start()
 
@@ -94,7 +91,6 @@ if __name__ == '__main__':
             port = input("Wprowadź numer portu na którym będzie słuchał server znajdujący się u klienta i inne dane "
                          "oddzielone @\nlogin@password@number_of_port\n")
             tmp = port.split("@")
-            print(tmp)
             client = Client(tmp[0], tmp[1], int(tmp[2]))
             good_clients_server_flag = True
         except OSError:
