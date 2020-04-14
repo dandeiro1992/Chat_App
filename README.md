@@ -1,3 +1,5 @@
+Chat_App in python
+
 This Chat application is written in python and was basically used for:
 -learning multithreading
 -learning some GUI in tkinter
@@ -25,3 +27,4 @@ The client_app.py:
 When initialising Clients in console, separate them with "@" because that is the original separator.
 
 Example is in Pictures/
+
